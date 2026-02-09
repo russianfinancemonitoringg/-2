@@ -483,13 +483,14 @@
         }
 
         .modal-content {
-            background-color: #1e1e1e;
+            background-color: #ffffff;
             padding: 30px;
             border-radius: 15px;
             width: 90%;
             max-width: 500px;
             border: 1px solid #333;
             position: relative;
+            color: #333;
         }
 
         .modal-header {
@@ -497,6 +498,10 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #1976d2;
         }
 
         .close-modal {
@@ -508,7 +513,7 @@
         }
 
         .close-modal:hover {
-            color: #fff;
+            color: #000;
         }
 
         /* Модальное окно для фото */
@@ -689,11 +694,11 @@
                 </button>
             </div>
             <div id="user-info" style="display: none;">
-                <span id="user-email"></span>
+                <span id="user-email" style="margin-right: 15px; color: #64b5f6; font-weight: 600;"></span>
                 <button class="btn btn-secondary" id="logout-btn">
                     <i class="fas fa-sign-out-alt"></i> Выйти
                 </button>
-                <button class="btn btn-warning" id="admin-panel-btn" style="display: none;">
+                <button class="btn btn-warning" id="admin-panel-btn" style="display: none; margin-left: 10px;">
                     <i class="fas fa-cog"></i> Админ-панель
                 </button>
             </div>
@@ -923,62 +928,6 @@
         </div>
     </div>
 
-    <div id="add-org-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="add-org-title"></h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="form-group">
-                <label for="org-name">Название:</label>
-                <input type="text" id="org-name" placeholder="Введите название">
-            </div>
-            <div class="form-group">
-                <label for="org-cities">Города (через запятую):</label>
-                <textarea id="org-cities" rows="3" placeholder="Например: Москва, Санкт-Петербург, Казань"></textarea>
-            </div>
-            <button id="save-org" class="btn btn-primary">Сохранить</button>
-        </div>
-    </div>
-
-    <div id="add-city-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-map-marker-alt"></i> Добавить город</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="form-group">
-                <label for="city-name">Название города:</label>
-                <input type="text" id="city-name" placeholder="Введите название города">
-            </div>
-            <button id="save-city" class="btn btn-primary">Добавить</button>
-        </div>
-    </div>
-
-    <div id="add-category-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-folder-plus"></i> Добавить категорию</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="form-group">
-                <label for="category-name">Название категории:</label>
-                <input type="text" id="category-name" placeholder="Введите название категории">
-            </div>
-            <div class="form-group">
-                <label for="category-icon">Иконка (FontAwesome класс):</label>
-                <input type="text" id="category-icon" placeholder="fas fa-icon" value="fas fa-building">
-            </div>
-            <button id="save-category" class="btn btn-primary">Добавить</button>
-        </div>
-    </div>
-
-    <!-- Модальное окно для просмотра фото -->
-    <div id="photo-modal" class="photo-modal">
-        <span class="close-photo-modal">&times;</span>
-        <img class="photo-modal-content" id="modal-photo">
-    </div>
-
     <!-- Уведомление -->
     <div id="notification" class="notification" style="display: none;">
         <i class="fas fa-info-circle"></i>
@@ -1109,7 +1058,7 @@
             selectedRating: 0,
             currentUser: null,
             addressFilter: null,
-            selectedPhotos: [] // Массив для хранения выбранных фото
+            selectedPhotos: []
         };
 
         // ==================== УТИЛИТЫ ====================
@@ -1247,6 +1196,131 @@
             }
         }
 
+        // ==================== ИНИЦИАЛИЗАЦИЯ И ОБРАБОТЧИКИ ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Восстанавливаем пользователя из localStorage
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    currentState.currentUser = JSON.parse(savedUser);
+                } catch (e) {
+                    console.error('Ошибка при загрузке пользователя из localStorage:', e);
+                    localStorage.removeItem('currentUser');
+                }
+            }
+            
+            // Обновляем интерфейс
+            updateAuthUI();
+            
+            // Обработчики для кнопок Войти и Регистрация
+            document.getElementById('login-btn').addEventListener('click', function() {
+                console.log('Кнопка Войти нажата');
+                openModal('login-modal');
+            });
+            
+            document.getElementById('register-btn').addEventListener('click', function() {
+                console.log('Кнопка Регистрация нажата');
+                openModal('register-modal');
+            });
+            
+            document.getElementById('login-from-review').addEventListener('click', function() {
+                openModal('login-modal');
+            });
+            
+            // Вход
+            document.getElementById('do-login').addEventListener('click', function() {
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value.trim();
+                
+                if (email && password) {
+                    login(email, password);
+                } else {
+                    showNotification('Заполните все поля', 'error');
+                }
+            });
+            
+            // Регистрация
+            document.getElementById('do-register').addEventListener('click', function() {
+                const email = document.getElementById('register-email').value.trim();
+                const password = document.getElementById('register-password').value.trim();
+                const confirm = document.getElementById('register-confirm').value.trim();
+                
+                if (!email || !password || !confirm) {
+                    showNotification('Заполните все поля', 'error');
+                    return;
+                }
+                
+                if (password !== confirm) {
+                    showNotification('Пароли не совпадают', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showNotification('Пароль должен быть не менее 6 символов', 'error');
+                    return;
+                }
+                
+                register(email, password);
+            });
+            
+            // Выход
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // Админ-панель
+            document.getElementById('admin-panel-btn').addEventListener('click', function() {
+                navigateToLevel('admin');
+            });
+            
+            // Закрытие модальных окон
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    closeModal(modal.id);
+                });
+            });
+            
+            // Клик вне модального окна
+            window.addEventListener('click', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = 'none';
+                }
+            });
+            
+            // Навигация по категориям
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    navigateToCategory(category);
+                });
+            });
+            
+            // Хлебные крошки
+            document.querySelectorAll('.breadcrumb').forEach(crumb => {
+                crumb.addEventListener('click', function() {
+                    const level = this.getAttribute('data-level');
+                    navigateToLevel(level);
+                });
+            });
+            
+            // Рейтинг
+            document.querySelectorAll('.star-large').forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    setRating(value);
+                });
+            });
+            
+            // Загрузка фото
+            document.getElementById('review-photo').addEventListener('change', handlePhotoUpload);
+            
+            // Добавление отзыва
+            document.getElementById('submit-review').addEventListener('click', addReview);
+            
+            // Инициализация главной страницы
+            renderHomePage();
+            updateBreadcrumbs();
+        });
+
         // ==================== НАВИГАЦИЯ ====================
         function navigateToLevel(level) {
             currentState.level = level;
@@ -1307,30 +1381,43 @@
         }
 
         function updateBreadcrumbs() {
-            breadcrumbs.forEach((crumb, index) => {
+            const breadcrumbElements = document.querySelectorAll('.breadcrumb');
+            const separatorElements = document.querySelectorAll('.separator');
+            
+            // Скрываем все крошки и разделители
+            breadcrumbElements.forEach((crumb, index) => {
                 if (index > 0) crumb.style.display = 'none';
             });
-            separators.forEach(sep => sep.style.display = 'none');
+            separatorElements.forEach(sep => sep.style.display = 'none');
             
+            // Показываем нужные крошки в зависимости от уровня
             document.querySelector('[data-level="home"]').style.display = 'inline-block';
             
             if (currentState.level === 'category' || currentState.level === 'organization' || currentState.level === 'city') {
-                document.querySelector('[data-level="category"]').style.display = 'inline-block';
-                document.querySelector('[data-level="category"]').textContent = appData.categories[currentState.category].name;
-                separators[0].style.display = 'inline';
+                if (currentState.category && appData.categories[currentState.category]) {
+                    document.querySelector('[data-level="category"]').style.display = 'inline-block';
+                    document.querySelector('[data-level="category"]').textContent = appData.categories[currentState.category].name;
+                    separatorElements[0].style.display = 'inline';
+                }
             }
             
             if (currentState.level === 'organization' || currentState.level === 'city') {
-                document.querySelector('[data-level="organization"]').style.display = 'inline-block';
-                document.querySelector('[data-level="organization"]').textContent = 
-                    appData.categories[currentState.category].organizations[currentState.organization].name;
-                separators[1].style.display = 'inline';
+                if (currentState.category && currentState.organization && 
+                    appData.categories[currentState.category] && 
+                    appData.categories[currentState.category].organizations[currentState.organization]) {
+                    document.querySelector('[data-level="organization"]').style.display = 'inline-block';
+                    document.querySelector('[data-level="organization"]').textContent = 
+                        appData.categories[currentState.category].organizations[currentState.organization].name;
+                    separatorElements[1].style.display = 'inline';
+                }
             }
             
             if (currentState.level === 'city') {
-                document.querySelector('[data-level="city"]').style.display = 'inline-block';
-                document.querySelector('[data-level="city"]').textContent = currentState.city;
-                separators[2].style.display = 'inline';
+                if (currentState.city) {
+                    document.querySelector('[data-level="city"]').style.display = 'inline-block';
+                    document.querySelector('[data-level="city"]').textContent = currentState.city;
+                    separatorElements[2].style.display = 'inline';
+                }
             }
         }
 
@@ -1344,6 +1431,11 @@
 
         function renderCategoryPage() {
             const category = appData.categories[currentState.category];
+            
+            if (!category) {
+                navigateToLevel('home');
+                return;
+            }
             
             document.getElementById('category-title').textContent = category.name;
             document.getElementById('category-title').innerHTML = `<i class="fas ${category.icon}"></i> ${category.name}`;
@@ -1422,6 +1514,7 @@
             });
             document.getElementById('level-city').style.display = 'block';
             
+            // Сбрасываем форму
             document.getElementById('review-text').value = '';
             document.getElementById('review-address').value = '';
             setRating(0);
@@ -1436,13 +1529,11 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 
-                // Проверка типа файла
                 if (!file.type.match('image.*')) {
                     showNotification('Можно загружать только изображения', 'error');
                     continue;
                 }
                 
-                // Проверка размера файла (макс 2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     showNotification(`Изображение ${file.name} слишком большое (макс 2MB)`, 'error');
                     continue;
@@ -1465,7 +1556,6 @@
                 reader.readAsDataURL(file);
             }
             
-            // Сбрасываем значение input, чтобы можно было загружать те же файлы снова
             event.target.value = '';
         }
 
@@ -1483,7 +1573,6 @@
                 previewContainer.appendChild(previewItem);
             });
             
-            // Добавляем обработчики для удаления фото
             document.querySelectorAll('.remove-photo').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-index'));
@@ -1493,7 +1582,6 @@
         }
 
         function removePhoto(index) {
-            // Освобождаем URL объекта
             if (currentState.selectedPhotos[index].preview.startsWith('blob:')) {
                 URL.revokeObjectURL(currentState.selectedPhotos[index].preview);
             }
@@ -1503,7 +1591,6 @@
         }
 
         function clearPhotos() {
-            // Освобождаем все URL объектов
             currentState.selectedPhotos.forEach(photo => {
                 if (photo.preview.startsWith('blob:')) {
                     URL.revokeObjectURL(photo.preview);
@@ -1542,122 +1629,6 @@
             ratingText.textContent = texts[value] || texts[0];
         }
 
-        // ==================== ОТОБРАЖЕНИЕ ОТЗЫВОВ ====================
-        function displayReviews() {
-            const reviewsList = document.getElementById('reviews-list');
-            reviewsList.innerHTML = '';
-            
-            let filteredReviews = appData.reviews.filter(review => {
-                return review.category === currentState.category &&
-                       review.organization === currentState.organization &&
-                       review.city === currentState.city &&
-                       review.status === 'approved';
-            });
-            
-            if (currentState.addressFilter) {
-                filteredReviews = filteredReviews.filter(review => 
-                    review.address.toLowerCase().includes(currentState.addressFilter.toLowerCase())
-                );
-                
-                document.getElementById('address-filter-info').style.display = 'block';
-                document.getElementById('current-address-filter').textContent = currentState.addressFilter;
-            } else {
-                document.getElementById('address-filter-info').style.display = 'none';
-            }
-            
-            if (filteredReviews.length === 0) {
-                reviewsList.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px;">
-                            <i class="fas fa-comment-slash"></i> Пока нет отзывов. Будьте первым!
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            filteredReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            filteredReviews.forEach(review => {
-                const row = document.createElement('tr');
-                
-                // Создаем ячейку для фото
-                let photosCell = '<td class="review-photo-cell">-</td>';
-                if (review.photos && review.photos.length > 0) {
-                    photosCell = `
-                        <td class="review-photo-cell">
-                            <img src="${review.photos[0]}" class="review-photo-thumb" 
-                                 alt="Фото отзыва" onclick="showPhotoModal('${review.photos[0]}')">
-                            ${review.photos.length > 1 ? `<small>+${review.photos.length - 1}</small>` : ''}
-                        </td>
-                    `;
-                }
-                
-                row.innerHTML = `
-                    <td>${review.date}</td>
-                    <td>
-                        <span class="address-link" data-address="${review.address}">
-                            ${review.address}
-                        </span>
-                    </td>
-                    <td>${review.text}</td>
-                    ${photosCell}
-                    <td class="rating-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</td>
-                    <td>${review.user}</td>
-                    <td>
-                        ${currentState.currentUser && currentState.currentUser.role === 'admin' ? `
-                            <button class="btn btn-danger btn-sm delete-review" data-id="${review.id}" style="padding: 5px 10px;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        ` : ''}
-                    </td>
-                `;
-                reviewsList.appendChild(row);
-            });
-            
-            // Добавляем обработчики для адресов
-            document.querySelectorAll('.address-link').forEach(link => {
-                link.addEventListener('click', function() {
-                    const address = this.getAttribute('data-address');
-                    filterByAddress(address);
-                });
-            });
-            
-            // Добавляем обработчики для удаления отзывов (админ)
-            if (currentState.currentUser && currentState.currentUser.role === 'admin') {
-                document.querySelectorAll('.delete-review').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const reviewId = parseInt(this.getAttribute('data-id'));
-                        deleteReview(reviewId);
-                    });
-                });
-            }
-        }
-
-        function showPhotoModal(photoSrc) {
-            document.getElementById('modal-photo').src = photoSrc;
-            document.getElementById('photo-modal').style.display = 'flex';
-        }
-
-        // ==================== ФИЛЬТРАЦИЯ ПО АДРЕСУ ====================
-        function filterByAddress(address) {
-            currentState.addressFilter = address;
-            displayReviews();
-        }
-
-        function clearAddressFilter() {
-            currentState.addressFilter = null;
-            document.getElementById('address-search').value = '';
-            displayReviews();
-        }
-
-        function searchByAddress() {
-            const searchTerm = document.getElementById('address-search').value.trim();
-            if (searchTerm) {
-                filterByAddress(searchTerm);
-            }
-        }
-
         // ==================== ДОБАВЛЕНИЕ ОТЗЫВА ====================
         function addReview() {
             if (!currentState.currentUser) {
@@ -1684,7 +1655,6 @@
                 return;
             }
             
-            // Сохраняем фото как Base64 строки
             const photosData = currentState.selectedPhotos.map(photo => photo.data);
             
             const newReview = {
@@ -1713,21 +1683,6 @@
                 showNotification('Отзыв добавлен и опубликован', 'success');
             } else {
                 showNotification('Спасибо за ваш отзыв! Он будет опубликован после модерации.', 'success');
-            }
-        }
-
-        function deleteReview(reviewId) {
-            if (confirm('Удалить этот отзыв?')) {
-                const index = appData.reviews.findIndex(r => r.id === reviewId);
-                if (index !== -1) {
-                    appData.reviews.splice(index, 1);
-                    displayReviews();
-                    showNotification('Отзыв удален', 'success');
-                    
-                    if (currentState.level === 'admin') {
-                        renderAdminPanel();
-                    }
-                }
             }
         }
 
@@ -1775,10 +1730,7 @@
             });
             document.getElementById('level-admin').style.display = 'block';
             
-            addAdminEventListeners();
-        }
-
-        function addAdminEventListeners() {
+            // Добавляем обработчики для админ-панели
             document.querySelectorAll('.approve-user').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const userId = parseInt(this.getAttribute('data-id'));
@@ -1817,128 +1769,90 @@
             }
         }
 
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentState.currentUser = JSON.parse(savedUser);
+        // ==================== ОТОБРАЖЕНИЕ ОТЗЫВОВ ====================
+        function displayReviews() {
+            const reviewsList = document.getElementById('reviews-list');
+            reviewsList.innerHTML = '';
+            
+            let filteredReviews = appData.reviews.filter(review => {
+                return review.category === currentState.category &&
+                       review.organization === currentState.organization &&
+                       review.city === currentState.city &&
+                       review.status === 'approved';
+            });
+            
+            if (currentState.addressFilter) {
+                filteredReviews = filteredReviews.filter(review => 
+                    review.address.toLowerCase().includes(currentState.addressFilter.toLowerCase())
+                );
+                
+                document.getElementById('address-filter-info').style.display = 'block';
+                document.getElementById('current-address-filter').textContent = currentState.addressFilter;
+            } else {
+                document.getElementById('address-filter-info').style.display = 'none';
             }
             
-            updateBreadcrumbs();
-            renderHomePage();
-            updateAuthUI();
+            if (filteredReviews.length === 0) {
+                reviewsList.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-comment-slash"></i> Пока нет отзывов. Будьте первым!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
             
-            // Навигация
-            document.querySelectorAll('.category-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const category = this.getAttribute('data-category');
-                    navigateToCategory(category);
+            filteredReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            filteredReviews.forEach(review => {
+                const row = document.createElement('tr');
+                
+                let photosCell = '<td class="review-photo-cell">-</td>';
+                if (review.photos && review.photos.length > 0) {
+                    photosCell = `
+                        <td class="review-photo-cell">
+                            <img src="${review.photos[0]}" class="review-photo-thumb" 
+                                 alt="Фото отзыва">
+                            ${review.photos.length > 1 ? `<small>+${review.photos.length - 1}</small>` : ''}
+                        </td>
+                    `;
+                }
+                
+                row.innerHTML = `
+                    <td>${review.date}</td>
+                    <td>
+                        <span class="address-link" data-address="${review.address}">
+                            ${review.address}
+                        </span>
+                    </td>
+                    <td>${review.text}</td>
+                    ${photosCell}
+                    <td class="rating-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</td>
+                    <td>${review.user}</td>
+                    <td>
+                        ${currentState.currentUser && currentState.currentUser.role === 'admin' ? `
+                            <button class="btn btn-danger btn-sm delete-review" data-id="${review.id}" style="padding: 5px 10px;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                reviewsList.appendChild(row);
+            });
+            
+            document.querySelectorAll('.address-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    const address = this.getAttribute('data-address');
+                    filterByAddress(address);
                 });
             });
-            
-            document.querySelectorAll('.breadcrumb').forEach(crumb => {
-                crumb.addEventListener('click', function() {
-                    const level = this.getAttribute('data-level');
-                    navigateToLevel(level);
-                });
-            });
-            
-            // Авторизация
-            document.getElementById('login-btn').addEventListener('click', () => openModal('login-modal'));
-            document.getElementById('register-btn').addEventListener('click', () => openModal('register-modal'));
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('admin-panel-btn').addEventListener('click', () => navigateToLevel('admin'));
-            document.getElementById('login-from-review').addEventListener('click', () => openModal('login-modal'));
-            
-            // Вход
-            document.getElementById('do-login').addEventListener('click', () => {
-                const email = document.getElementById('login-email').value.trim();
-                const password = document.getElementById('login-password').value.trim();
-                
-                if (email && password) {
-                    login(email, password);
-                } else {
-                    showNotification('Заполните все поля', 'error');
-                }
-            });
-            
-            // Регистрация
-            document.getElementById('do-register').addEventListener('click', () => {
-                const email = document.getElementById('register-email').value.trim();
-                const password = document.getElementById('register-password').value.trim();
-                const confirm = document.getElementById('register-confirm').value.trim();
-                
-                if (!email || !password || !confirm) {
-                    showNotification('Заполните все поля', 'error');
-                    return;
-                }
-                
-                if (password !== confirm) {
-                    showNotification('Пароли не совпадают', 'error');
-                    return;
-                }
-                
-                if (password.length < 6) {
-                    showNotification('Пароль должен быть не менее 6 символов', 'error');
-                    return;
-                }
-                
-                register(email, password);
-            });
-            
-            // Закрытие модальных окон
-            document.querySelectorAll('.close-modal').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const modal = this.closest('.modal');
-                    modal.style.display = 'none';
-                });
-            });
-            
-            document.querySelector('.close-photo-modal').addEventListener('click', function() {
-                document.getElementById('photo-modal').style.display = 'none';
-            });
-            
-            window.addEventListener('click', (e) => {
-                if (e.target.classList.contains('modal')) {
-                    e.target.style.display = 'none';
-                }
-                if (e.target.id === 'photo-modal') {
-                    document.getElementById('photo-modal').style.display = 'none';
-                }
-            });
-            
-            // Рейтинг
-            document.querySelectorAll('.star-large').forEach(star => {
-                star.addEventListener('click', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    setRating(value);
-                });
-            });
-            
-            // Загрузка фото
-            document.getElementById('review-photo').addEventListener('change', handlePhotoUpload);
-            document.getElementById('photo-upload-label').addEventListener('click', function(e) {
-                if (e.target !== document.getElementById('review-photo')) {
-                    document.getElementById('review-photo').click();
-                }
-            });
-            
-            // Добавление отзыва
-            document.getElementById('submit-review').addEventListener('click', addReview);
-            
-            // Поиск по адресам
-            document.getElementById('search-button').addEventListener('click', searchByAddress);
-            document.getElementById('address-search').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    searchByAddress();
-                }
-            });
-            document.getElementById('clear-search').addEventListener('click', () => {
-                document.getElementById('address-search').value = '';
-                clearAddressFilter();
-            });
-            document.getElementById('clear-address-filter').addEventListener('click', clearAddressFilter);
-        });
+        }
+
+        function filterByAddress(address) {
+            currentState.addressFilter = address;
+            displayReviews();
+        }
     </script>
 </body>
 </html>
